@@ -1,7 +1,19 @@
-import '../styles/globals.css'
+import {ChakraProvider} from '@chakra-ui/react';
 
-function MyApp({ Component, pageProps }) {
-  return <Component {...pageProps} />
+import { AnimatePresence } from 'framer-motion'
+
+function MyApp({Component, pageProps}) {
+  return (
+    <ChakraProvider>
+      <AnimatePresence
+        exitBeforeEnter
+        initial={false}
+        onExitComplete={() => window.scrollTo (0, 0)}
+      >
+        <Component {...pageProps} />
+      </AnimatePresence>
+    </ChakraProvider>
+  );
 }
 
-export default MyApp
+export default MyApp;
