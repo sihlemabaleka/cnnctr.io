@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 export const auth_providers_list = [
     {
         name: 'Google',
@@ -18,7 +20,7 @@ export const auth_providers_list = [
         service: 'twitter',
         category: 'Auth',
         description: 'Twitter APIs handle enormous amounts of data. The way we ensure this data is secured for developers and users alike is through authentication.',
-        image: '/logos/twitter-logo.png',
+        image: '/logos/twitter-logo.png'
     },
     {
         name: 'Metavase',

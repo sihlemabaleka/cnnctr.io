@@ -1,17 +1,17 @@
-import {useRouter} from 'next/router';
 import React, {useEffect, useState} from 'react';
+import {services} from '../../../constants/services';
 import Layout from '../../../components/Layout';
 import {Box, Text, HStack, Flex} from '@chakra-ui/layout';
-import supabase from '../../../hooks/useSupabase';
+
 import {Link, useDisclosure} from '@chakra-ui/react';
-import ServiceModal from '../../../containers/services-modal/index';
-import {auth_providers_list} from '../../../constants/auth_providers_list';
+import ServiceModal from '../../../containers/services-modal';
 
 import {
     Modal,
     ModalBody,
     ModalCloseButton,
     ModalContent,
+    ModalFooter,
     ModalHeader,
     ModalOverlay,
 } from '@chakra-ui/modal'
@@ -27,48 +27,64 @@ import {
 import {useBreakpointValue} from "@chakra-ui/react"
 import {Button} from '@chakra-ui/button';
 import Sidebar from '../../../components/Sidebar';
+import {useQuery} from "react-query";
+import {fetchMe} from "../../../api/API";
+import axios from "axios";
+import {useRouter} from "next/router";
 
-const ServicePage = ({service: selectedService}) => {
+const ServicePage = () => {
     const router = useRouter()
 
-    const [service, setService] = useState(selectedService);
-
-
+    const [service, setService] = useState(services.filter((value) => value.service === (router.query.service || 'aws_dynamodb'))[0])
     const {isOpen, onOpen, onClose} = useDisclosure()
     const {isOpen: isDrawerOpen, onOpen: onDrawerOpen, onClose: onDrawerClose} = useDisclosure()
 
-    const menuRef = React.useRef()
-    const size = useBreakpointValue(['full', null, 'xl'])
+    const {data: user, error, isLoading, isFetching, } = useQuery("me", async () => await fetchMe());
 
-    useEffect(() => {
-        const service_id = router.query.service_id
-        if (service_id)
-            setService(auth_providers_list.filter(serv => serv.service === service_id)[0])
-    }, [router.query.service_id])
+
+    React.useEffect(() => {
+        if (user)
+            if (user?.error)
+                callAxios("/api/auth/sign-out").then(async (response) => await changRoute("/auth/sign-in"))
+
+    }, [user, error])
+
+    const callAxios = async (url) => await axios.post(url)
+
+    const changRoute = async (url) =>
+        await router.replace(url)
+
+    const menuRef = React.useRef()
+    const size = useBreakpointValue(['full', 'xl'])
 
     const itemOpened = () => {
         onOpen()
     }
 
     useEffect(() => {
-
-    }, [router.pathname])
+        if(router?.query?.service) {
+            const incoming = services.filter((value) => value.service === router.query.service)[0]
+            if(incoming.service !== service.service) {
+                setService(incoming)
+            }
+        }
+    }, [router])
 
     return (
         <>
             <Layout
-                services={auth_providers_list}
+                services={services}
                 selected_service={service?.service}
                 title={service?.name}
                 itemOpened={itemOpened}
                 menuRef={menuRef}
                 onDrawerOpen={onDrawerOpen}
-                page="auth-providers"
-                base_path={'/platform/auth-providers'}
+                page="data-sources"
+                base_path={'/platform/data-sources'}
             >
                 <Box>
                     <Text>
-                        <p>Page: {service.name}</p>
+                        <p>Page: {service?.name}</p>
                     </Text>
                 </Box>
                 <Modal
@@ -89,14 +105,19 @@ const ServicePage = ({service: selectedService}) => {
                         </ModalHeader>
                         <ModalBody>
                             <Flex flexDirection={"column"}>
-                                <ServiceModal flex={'1'}
-                                              onClose={onClose} service={service} />
+                                <ServiceModal flex={'1'} onClose={onClose} service={service}
+                                              path={"/api/credentials/insert"}/>
                                 <Button variant="ghost" mr={3} onClick={onClose}>
                                     Close
                                 </Button>
                             </Flex>
                         </ModalBody>
                     </ModalContent>
+                    <ModalFooter>
+                        <Button variant="ghost" mr={3} onClick={onClose}>
+                            Close
+                        </Button>
+                    </ModalFooter>
                 </Modal>
                 <Drawer
                     isOpen={isDrawerOpen}
@@ -110,24 +131,25 @@ const ServicePage = ({service: selectedService}) => {
                         <DrawerHeader>Menu</DrawerHeader>
 
                         <DrawerBody>
-
                             <SimpleGrid columns={1} spacing={2} mb={5}>
-                                <Button
-                                    variant="outline"
-                                    fontSize="xs"
-                                    // color="#2a2a2a"
-                                >
-                                    <Link href={'/platform/data-sources'}>
+                                <Link href={'/platform/data-sources/aws_dynamodb'}>
+                                    <Button
+                                        variant="solid"
+                                        fontSize="xs"
+                                        w={"100%"}
+                                        // color="#2a2a2a"
+                                    >
+
                                         Data Sources
-                                    </Link>
-                                </Button>
-                                <Button variant={"solid"} fontSize="xs"
-                                    // color="#2a2a2a"
-                                >
-                                    <Link href={'/platform/auth-providers'}>
+                                    </Button>
+                                </Link>
+                                <Link href={'/platform/auth-providers/google'}>
+                                    <Button variant="outline" fontSize="xs" w={"100%"}
+                                        // color="#2a2a2a"
+                                    >
                                         Auth Providers
-                                    </Link>
-                                </Button>
+                                    </Button>
+                                </Link>
                                 <Button variant="outline" fontSize="xs"
                                     // color="#2a2a2a"
                                 >
@@ -135,55 +157,18 @@ const ServicePage = ({service: selectedService}) => {
                                 </Button>
                             </SimpleGrid>
 
-                            <Sidebar onDrawerClose={onDrawerClose} columnCount={2} services={auth_providers_list}
-                                     selected_service={service.service}
-                                     base_path={'/platform/auth-providers'}/>
+                            <Sidebar onDrawerClose={onDrawerClose}
+                                     base_path={'/platform/data-sources'}
+                                     columnCount={2}
+                                     services={services}
+                                     page="data-sources"
+                                     selected_service={service?.service}/>
                         </DrawerBody>
-
-                        {/* <DrawerFooter>
-            <Button variant="outline" mr={3} onClick={onClose}>
-              Cancel
-            </Button>
-            <Button colorScheme="blue">Save</Button>
-          </DrawerFooter> */}
                     </DrawerContent>
                 </Drawer>
             </Layout>
         </>
     );
 };
-
-
-export async function getServerSideProps({req, query}) {
-    const {user} = await supabase.auth.api.getUserByCookie(req)
-
-    const {service_id} = query
-
-
-    let service;
-
-    if (service_id) {
-        service = auth_providers_list.filter(value => value.service === service_id)[0];
-    } else {
-        return {
-            redirect: {
-                permanent: false,
-                destination: `/platform/auth-providers/${auth_providers_list[0].service}`
-            }
-        }
-    }
-
-    if (!user) {
-        return {
-            props: {
-                service,
-                user
-            },
-        }
-    }
-
-    /* if user is present, do something with the user data here */
-    return {props: {service}}
-}
 
 export default ServicePage;

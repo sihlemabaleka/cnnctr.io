@@ -12,12 +12,12 @@ import {useRouter} from 'next/router';
 const Sidebar = ({services, selected_service = 'aws_dynamodb', columnCount, onDrawerClose, base_path}) => {
 
     const router = useRouter()
-    const handleClick = (service_id) => {
+    const handleClick = async (service_id) => {
         if (onDrawerClose) {
             onDrawerClose()
         }
 
-        router.push(`${base_path}/${service_id}`)
+        await router.push(`${base_path}?service=${service_id}`)
     }
 
     return (
@@ -44,13 +44,12 @@ const Sidebar = ({services, selected_service = 'aws_dynamodb', columnCount, onDr
                                 onClick={() => handleClick(service.service)}
                             >
                                 <VStack spacing={3}>
-                                    <Image
-                                        src={service.image}
-                                        alt={service.name}
-                                        width={30}
-                                        height={30}
-                                        objectFit="scale-down"
-                                    />
+                                    <Image src={service.image} {...{
+                                        width: 30,
+                                        height: 30,
+                                        objectFit: "scale-down",
+                                        alt: service.name
+                                    }} />
                                     <Text>
                                         {service.name.replace('AWS', '').replace('Online', '')}
                                     </Text>

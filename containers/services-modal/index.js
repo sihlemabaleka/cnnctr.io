@@ -10,12 +10,16 @@ import {
     FormErrorMessage,
 } from "@chakra-ui/react"
 import credential_fields from "../../constants/cloud_credentials_field_values";
+import axios from "axios";
+import {useState} from "react";
 
 
 const ServiceModal = ({
                           service,
-                          onClose
+                          onClose,
+                          path
                       }) => {
+    const [isLoading, setLoading]= useState(false)
 
     const {
         register,
@@ -28,8 +32,14 @@ const ServiceModal = ({
         return <h1>Service not found</h1>
     }
 
-    const onSubmit = (data) => {
-        alert(JSON.stringify(data))
+    const onSubmit = async (data) => {
+        setLoading(true)
+        await axios.post(path, {service: service.service, ...data}).then(({data, error}) => {
+            setLoading(false)
+            if (error) return alert(error.message)
+            onClose()
+            return;
+        })
     }
 
     return (
@@ -43,7 +53,7 @@ const ServiceModal = ({
                     objectFit="scale-down"
                     // mx={20}
                 />
-                <Text align={['center']} mt={10} >{service.description}</Text>
+                <Text align={['center']} mt={10}>{service.description}</Text>
             </Flex>
             <Tabs variant="enclosed" mt={25}>
                 <TabList mb="1em">
@@ -55,51 +65,59 @@ const ServiceModal = ({
                 <TabPanels>
                     <TabPanel>
                         {service.credentials && service.credentials.length > 0 && (
-                            <>
-                                <form onSubmit={handleSubmit(onSubmit)}>
-                                    <SimpleGrid columns={{base: 1, sm: 2, xl: 3}} spacing={5}>
-                                        {service.credentials && service.credentials.map((value, index) => {
-                                            const label = value.replace('_', ' ')
-                                            return (
-                                                <FormControl id={value} key={index} isInvalid={errors[value]}>
-                                                    <FormLabel ml="5px">{capitalizeFirstLetter(label)}</FormLabel>
-                                                    {
-                                                        value === 'region' ? <Select placeholder="Select option">
-                                                                {
-                                                                    credential_fields.AWS.region.value.map((option, index) => {
-                                                                            const option_label = option.replace('_', ' ')
-                                                                            return <option key={index}
-                                                                                           value={option}
-                                                                                           className={'py-5'}
-                                                                            >{option_label}</option>
-                                                                        }
-                                                                    )}
-                                                            </Select>
-                                                            : <Input type="text"
-                                                                     {...register(value, {
-                                                                         required: "This field is required.",
-                                                                         minLength: {
-                                                                             value: 4,
-                                                                             message: "Minimum length should be 4"
-                                                                         }
-                                                                     })
-                                                                     } placeholder={`Type here...`}/>}
+                            <form onSubmit={handleSubmit(onSubmit)}>
+                                <SimpleGrid columns={{base: 1, sm: 2, xl: 3}} spacing={5}>
+                                    {service.credentials && service.credentials.map((value, index) => {
+                                        const label = value.replace('_', ' ')
+                                        return (
+                                            <FormControl id={value} key={index} isInvalid={errors[value]}>
+                                                <FormLabel ml="5px">{capitalizeFirstLetter(label)}</FormLabel>
+                                                {
+                                                    value === 'region' ? <Select placeholder="Select option"
+                                                                                 isDisabled={isLoading} isRequired={true}>
+                                                            {
+                                                                credential_fields.AWS.region.value.map((option, index) => {
+                                                                        const option_label = option.replace('_', ' ')
+                                                                        return <option key={index}
+                                                                                       value={option}
+                                                                                       className={'py-5'}
+                                                                                       {...register(value.replace(" ", "_").toLowerCase(), {
+                                                                                           required: "This field is required.",
+                                                                                           minLength: {
+                                                                                               value: 4,
+                                                                                               message: "Minimum length should be 4"
+                                                                                           }
+                                                                                       })
+                                                                                       }
+                                                                        >{option_label}</option>
+                                                                    }
+                                                                )}
+                                                        </Select>
+                                                        : <Input type="text"
+                                                                 isDisabled={isLoading}
+                                                                 {...register(value.replace(" ", "_").toLowerCase(), {
+                                                                     required: "This field is required.",
+                                                                     minLength: {
+                                                                         value: 4,
+                                                                         message: "Minimum length should be 4"
+                                                                     }
+                                                                 })
+                                                                 } placeholder={`Type here...`}/>}
 
 
-                                                    <FormErrorMessage>
-                                                        {errors[value] && errors[value].message}
-                                                    </FormErrorMessage>
-                                                </FormControl>
-                                            )
-                                        })}
-                                    </SimpleGrid>
-                                    <Flex alignContent="center" alignItems="center">
-                                        <Button type="submit" mt={10} size="lg">Save</Button>
-                                        <Spacer/>
-                                        <Button mt={10} size="lg" variant={"ghost"} colorScheme={"red"}
-                                                onClick={() => onClose()}>Cancel</Button>
-                                    </Flex>
-                                </form>
+                                                <FormErrorMessage>
+                                                    {errors[value] && errors[value].message}
+                                                </FormErrorMessage>
+                                            </FormControl>
+                                        )
+                                    })}
+                                </SimpleGrid>
+                                <Flex alignContent="center" alignItems="center">
+                                    <Button type="submit" mt={10} size="lg" isLoading={isLoading}>Save</Button>
+                                    <Spacer/>
+                                    {!isLoading && <Button mt={10} size="lg" variant={"ghost"} colorScheme={"red"}
+                                             onClick={() => onClose()}>Cancel</Button>}
+                                </Flex>
 
                                 <Container mt={25}>
                                     <Text size="xs" align="center"
@@ -109,7 +127,7 @@ const ServiceModal = ({
                                         level access control and is never stored as plain text.
                                     </Text>
                                 </Container>
-                            </>
+                            </form>
                         )}
                     </TabPanel>
                     {/* <TabPanel>

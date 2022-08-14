@@ -1,18 +1,15 @@
-import {useRouter} from 'next/router'
-import React, {useEffect, useState} from 'react';
-import {services} from '../../../constants/services';
-import Layout from '../../../components/Layout';
+import React from 'react';
+import Layout from '../../../../components/Layout';
 import {Box, Text, HStack, Flex} from '@chakra-ui/layout';
-import supabase from '../../../hooks/useSupabase';
 import {Link, useDisclosure} from '@chakra-ui/react';
-import ServiceModal from '../../../containers/services-modal/index';
+import ServiceModal from '../../../../containers/services-modal';
+import {auth_providers_list} from '../../../../constants/auth_providers_list';
 
 import {
     Modal,
     ModalBody,
     ModalCloseButton,
     ModalContent,
-    ModalFooter,
     ModalHeader,
     ModalOverlay,
 } from '@chakra-ui/modal'
@@ -27,42 +24,31 @@ import {
 } from "@chakra-ui/react"
 import {useBreakpointValue} from "@chakra-ui/react"
 import {Button} from '@chakra-ui/button';
-import Sidebar from '../../../components/Sidebar';
+import Sidebar from '../../../../components/Sidebar';
 
-const ServicePage = (props) => {
-    const router = useRouter()
-
-    const [service, setService] = useState(props.service);
-
-
+const ServicePage = ({service}) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
     const {isOpen: isDrawerOpen, onOpen: onDrawerOpen, onClose: onDrawerClose} = useDisclosure()
 
     const menuRef = React.useRef()
-    const size = useBreakpointValue(['full', 'xl'])
+    const size = useBreakpointValue(['full', null, 'xl'])
 
-    useEffect(() => {
-        const service_id = router.query.service_id
-        if (service_id)
-            setService(services.filter(serv => serv.service === service_id)[0])
-    }, [router.query.service_id])
 
     const itemOpened = () => {
         onOpen()
     }
 
-
     return (
         <>
             <Layout
-                services={services}
+                services={auth_providers_list}
                 selected_service={service?.service}
                 title={service?.name}
                 itemOpened={itemOpened}
                 menuRef={menuRef}
                 onDrawerOpen={onDrawerOpen}
-                page="data-sources"
-                base_path={'/platform/data-sources'}
+                page="auth-providers"
+                base_path={'/platform/auth-providers'}
             >
                 <Box>
                     <Text>
@@ -87,18 +73,14 @@ const ServicePage = (props) => {
                         </ModalHeader>
                         <ModalBody>
                             <Flex flexDirection={"column"}>
-                            <ServiceModal  flex={'1'} onClose={onClose} service={service} />
+                                <ServiceModal flex={'1'}
+                                              onClose={onClose} service={service}  path={"/api/providers/insert"}/>
                                 <Button variant="ghost" mr={3} onClick={onClose}>
                                     Close
                                 </Button>
                             </Flex>
                         </ModalBody>
                     </ModalContent>
-                    <ModalFooter>
-                        <Button variant="ghost" mr={3} onClick={onClose}>
-                            Close
-                        </Button>
-                    </ModalFooter>
                 </Modal>
                 <Drawer
                     isOpen={isDrawerOpen}
@@ -114,37 +96,33 @@ const ServicePage = (props) => {
                         <DrawerBody>
 
                             <SimpleGrid columns={1} spacing={2} mb={5}>
-                                <Link href={'/platform/data-sources'}>
-                                <Button
-                                    variant="solid"
-                                    fontSize="xs"
-                                    w={"100%"}
-                                    // color="#2a2a2a"
-                                    >
-
+                                <Link href={'/platform/data-sources/aws_dynamodb'}>
+                                    <Button
+                                        variant="outline"
+                                        fontSize="xs"
+                                        w={"100%"}>
                                         Data Sources
-                                </Button>
+                                    </Button>
                                 </Link>
-                                <Link href={'/platform/auth-providers'}>
-                                <Button variant="outline" fontSize="xs" w={"100%"} 
-                                // color="#2a2a2a"
-                                >
+                                <Link href={'/platform/auth-providers/google'}>
+                                    <Button
+                                        variant={"solid"}
+                                        fontSize="xs"
+                                        w={"100%"}
+                                    >
                                         Auth Providers
-                                </Button>
+                                    </Button>
                                 </Link>
-                                <Button variant="outline" fontSize="xs" 
-                                // color="#2a2a2a"
+                                <Button variant="outline" fontSize="xs"
+                                    // color="#2a2a2a"
                                 >
                                     Settings
                                 </Button>
                             </SimpleGrid>
 
-                            <Sidebar onDrawerClose={onDrawerClose}
-                                     base_path={'/platform/data-sources'}
-                                     columnCount={2}
-                                     services={services}
-                                     page="data-sources"
-                                     selected_service={service.service}/>
+                            <Sidebar onDrawerClose={onDrawerClose} columnCount={2} services={auth_providers_list}
+                                     selected_service={service.service}
+                                     base_path={'/platform/auth-providers'}/>
                         </DrawerBody>
 
                         {/* <DrawerFooter>
@@ -161,33 +139,23 @@ const ServicePage = (props) => {
 };
 
 
-export async function getServerSideProps({req, query}) {
-    const {user} = await supabase.auth.api.getUserByCookie(req)
-
-    const {service_id} = query
-    let service;
-    if (service_id) {
-        service = services.filter(value => value.service === service_id)[0];
-    } else {
-        return {
-            redirect: {
-                permanent: false,
-                destination: `/platform/data-sources/${services[0].service}`
-            }
-        }
+export async function getStaticProps({params}) {
+    return {
+        props: {
+            service: auth_providers_list.filter((value) => value.service === params.id)[0],
+        },
     }
+}
 
-    if (!user) {
-        return {
-            props: {
-                service,
-                user
-            },
-        }
-    }
 
-    /* if user is present, do something with the user data here */
-    return {props: {service}}
+export function getStaticPaths() {
+
+    const paths = auth_providers_list.map(({service}) => ({
+        params: {
+            id: service
+        },
+    }))
+    return {paths, fallback: false}
 }
 
 export default ServicePage;

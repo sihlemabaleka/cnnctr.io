@@ -1,28 +1,17 @@
 import supabase from '../../../../hooks/useSupabase'
-const handler = async (req) => {
-  let email = req.body.get('email')
-  let password = req.body.get('password')
+import cookie from 'cookie'
+import Auth from "../../../../hooks/useGoBetweenAuth";
 
-  const { session, error } = await supabase.auth.signIn({ email, password })
+const handler = async (req, res) => {
+    let username = req.body.username
+    let password = req.body.password
 
-  if (error) {
-    return {
-      status: error.status,
-      message: error.message,
+    
+    try {
+        const user = await Auth.signIn(username, password);
+    } catch (error) {
+        console.log('error signing in', error);
     }
-  }
-
-  return {
-    status: 200,
-    body: 'success',
-    headers: {
-      'set-cookie': `session=${
-        session.access_token
-      }; Path=/; HttpOnly; Secure; SameSite=Strict; Expires=${new Date(
-        session.expires_at * 1000
-      ).toUTCString()};`,
-    },
-  }
 }
 
 export default handler

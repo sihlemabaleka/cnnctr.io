@@ -1,8 +1,28 @@
-import cookie from 'cookie';
+import Cookies from "cookies";
 
-const getCookie = () => {
-    return cookie.parse(request.headers.cookie || '').session || null;
+export const getCookie = (request, response, key) => {
+    // Get a cookie
+    const cookie = new Cookies(request, response, key);
+    return cookie.get(key) || null
 };
 
+export const setCookie = (request, response, {key = "session", value}) => {
+    // Get a cookie
+    const cookie = new Cookies(request, response);
+    return cookie.set(key, value)
+};
 
-export default getCookie;
+export const removeCookie = (request, response, key) => {
+    // Get a cookie
+    const cookie = new Cookies(request, response);
+    return cookie.set(key)
+};
+
+const useCookies = {
+    getCookie,
+    setCookie,
+    removeCookie
+}
+
+export default useCookies
+

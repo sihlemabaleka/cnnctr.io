@@ -1,20 +1,34 @@
 import supabase from '../../../../hooks/useSupabase'
-import getCookie from "../../../../hooks/useCookie";
 
 const handler = async (req, res) => {
-  const session = getCookie()
 
 
-  const { data: user, error } = await supabase.auth.api.getUser(session)
+    const {user, error} = await supabase.auth.api.getUser(req.cookies.token)
 
-  if (error) {
-    return res.status(200).json({
-      status: 400,
-      message: error.message,
-    })
-  }
+    if (error) {
+        const refreshToken = req.cookies.session_refresh
+        if (refreshToken) {
+            const {data, error: refreshError} = await supabase.auth.api.refreshAccessToken(refreshToken)
 
-  return res.status(200).json({ data: user })
+            if (!refreshError) {
+                res.json({data: data})
+                res.end()
+                return
+            }
+            res.json({error: refreshError})
+            res.end()
+            return
+        } else {
+            res.json({error})
+            res.end()
+            return
+        }
+    }
+
+    res.status(200)
+    res.json({data: {id: user.id}})
+    res.end()
+    return;
 }
 
 export default handler

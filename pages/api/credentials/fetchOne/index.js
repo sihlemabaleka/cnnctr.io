@@ -1,27 +1,34 @@
 import supabase from '../../../../hooks/useSupabase';
 import {CREDENTIALS_API_ROUTE} from '../../../../constants/api_constants';
+import Cookies from "cookies";
 
 const handler = async (req, res) => {
-  const session = req.headers.Authorization;
 
-  let {id} = req.body;
+    let {id} = req.body;
 
-  supabase.auth.setAuth (session);
+    // Create a cookies instance
+    const cookies = new Cookies(req, res)
+    // Get a cookie
+    const session = cookies.get('session')
 
-  let {data, error} = await supabase
-    .from (CREDENTIALS_API_ROUTE)
-    .select (`*`)
-    .eq ('id', id)
-    .single ();
+    supabase.auth.setAuth(session)
 
-  if (error) {
-    return {
-      status: error.status,
-      message: error.message,
-    };
-  }
+    let {data, error} = await supabase
+        .from(CREDENTIALS_API_ROUTE)
+        .select(`*`)
+        .eq('id', id)
+        .single();
 
-  return res.status (200).json ({data});
+    if (error) {
+        return {
+            error
+        }
+    }
+
+    res.status(200)
+    res.json({data})
+    res.end()
+    return
 };
 
 export default handler;

@@ -1,19 +1,26 @@
 import {ChakraProvider} from '@chakra-ui/react';
 
-import { AnimatePresence } from 'framer-motion'
+import {AnimatePresence} from 'framer-motion'
+import {Hydrate, QueryClient, QueryClientProvider} from 'react-query'
+
+const queryClient = new QueryClient()
 
 function MyApp({Component, pageProps}) {
-  return (
-    <ChakraProvider>
-      <AnimatePresence
-        exitBeforeEnter
-        initial={false}
-        onExitComplete={() => window.scrollTo (0, 0)}
-      >
-        <Component {...pageProps} />
-      </AnimatePresence>
-    </ChakraProvider>
-  );
+    return (
+        <QueryClientProvider client={queryClient}>
+            <Hydrate state={pageProps.dehydratedState}>
+                <ChakraProvider>
+                    <AnimatePresence
+                        exitBeforeEnter
+                        initial={true}
+                        onExitComplete={() => window.scrollTo(0, 0)}
+                    >
+                        <Component {...pageProps} />
+                    </AnimatePresence>
+                </ChakraProvider>
+            </Hydrate>
+        </QueryClientProvider>
+    );
 }
 
 export default MyApp;

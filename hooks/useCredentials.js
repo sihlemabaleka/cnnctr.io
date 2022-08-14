@@ -41,3 +41,5 @@ export {
     getCredentials,
     getSingleCredential,
 };
+
+localhost:3000/platform/apps/[app_id]/data-sources/[id]/index.js

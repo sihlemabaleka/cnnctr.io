@@ -30,7 +30,7 @@ const Header = ({onDrawerOpen, page}) => {
                 </Box>
                 <Box p="4" d={{base: 'none', lg: 'initial'}}>
                     <SimpleGrid columns={[1, 3]} spacing={[10, 30]}>
-                        <Link href={'/platform/data-sources'}>
+                        <Link href={'/platform/data-sources?service=aws_dynamodb'}>
                             <Button
                                 variant={page === 'data-sources' ? "solid" : "outline"}
                                 fontSize="xs"
@@ -40,7 +40,7 @@ const Header = ({onDrawerOpen, page}) => {
                                 Data Sources
                             </Button>
                         </Link>
-                        <Link href={'/platform/auth-providers'}>
+                        <Link href={'/platform/auth-providers/google'}>
                             <Button
                                 variant={page === 'auth-providers' ? "solid" : "outline"} w={"100%"} fontSize="xs"
                                 // color="#2a2a2a"
@@ -48,9 +48,7 @@ const Header = ({onDrawerOpen, page}) => {
                                 Auth Providers
                             </Button>
                         </Link>
-                        <Button variant="outline" fontSize="xs"
-                            // color="#2a2a2a"
-                        >
+                        <Button variant="outline" fontSize="xs" >
                             Settings
                         </Button>
                     </SimpleGrid>
